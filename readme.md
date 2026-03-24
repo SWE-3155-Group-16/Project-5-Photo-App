@@ -1,9 +1,11 @@
-# \<Project Name\> Scrum Team
+# \<Photo App\> Group 16 / 49er Nav
 ## Product Owner
-\<Team Member Name\>
+\<Harrison Syfert\>
 ## Scrum Master
-\<Team Member Name\>
+\<Harrison Syfert\>
 ## Developers
-- \<Team Member Name\>
-- \<Team Member Name\>
-- \<Team Member Name\>
+- \<Cole Peterson\>
+- \<Warren Itenson\>
+- \<Jeramiah Kaplan\>
+- \<William \>
+
