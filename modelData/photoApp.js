@@ -22,10 +22,10 @@
  *   description (string) - A brief user description.
  *   occupation (string) - The occupation of the user.
  *
- * Models.photoOfUserModel - A function that returns the photos belong to
- * the specified user. Called  with an user ID (id), the function returns an object containing:
+ * Models.photoOfUserModel - A function that returns the photos belonging to
+ * the specified user. Called with a user ID (id), the function returns an object containing:
  *   _id  (string) - The ID of the photo
- *   date_time (date) - he date and time the picture was taken in ISO format.
+ *   date_time (date) - The date and time the picture was taken in ISO format.
  *   file_name (string) - The file name in the image directory of the picture.
  *   user_id (string) - The user id of the picture's owner.
  *   comments: {array of objects} - An array of comment objects containing the properties:
@@ -224,7 +224,7 @@
       userListModel: userListModel,
       userModel: userModel,
       photoOfUserModel: photoOfUserModel,
-      schemaInfo: schemaModel
+      schemaModel: schemaModel
    };
 
    if( typeof exports !== 'undefined' ) {
