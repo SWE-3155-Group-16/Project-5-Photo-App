@@ -2,7 +2,7 @@
 ## Product Owner
 \<Harrison Syfert\>
 ## Scrum Master
-\<Team Member Name\>
+\<Harrison Syfert\>
 ## Developers
 - \<Cole Peterson\>
 - \<Warren Itenson\>
