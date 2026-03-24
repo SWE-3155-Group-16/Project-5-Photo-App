@@ -1,4 +1,4 @@
-# \<Project Name\> Scrum Team
+# \<Photo App\> Group 16 / 49er Nav
 ## Product Owner
 \<Team Member Name\>
 ## Scrum Master
