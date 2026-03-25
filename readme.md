@@ -8,4 +8,5 @@ Cole Peterson
 - \<Warren Itenson\>
 - \<Jeramiah Kaplan\>
 - \<William \>
+- \<Harrison Syfert\>
 
