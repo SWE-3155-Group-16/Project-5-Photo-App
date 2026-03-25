@@ -2,7 +2,7 @@
 ## Product Owner
 \Group 16\
 ## Scrum Master
-\Cole Peterson\
+Cole Peterson
 ## Developers
 - \<Cole Peterson\>
 - \<Warren Itenson\>
