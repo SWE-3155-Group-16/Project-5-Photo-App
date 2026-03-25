@@ -1,4 +1,17 @@
 .topbar-appBar {
-  height: 60;
-  justify-content: 'center';
+  height: 60px;
+  justify-content: center;
+}
+
+.topbar-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
