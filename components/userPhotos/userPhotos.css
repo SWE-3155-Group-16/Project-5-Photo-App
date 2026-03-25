@@ -1,0 +1,90 @@
+/* ── Page root ────────────────────────────────────────────────────────────── */
+.up-root {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 16px;
+}
+
+/* ── Status box: used for loading / error / empty states ─────────────────── */
+.up-status-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  padding: 32px;
+}
+
+/* ── Photo card ──────────────────────────────────────────────────────────── */
+.up-photo-card {
+  border-radius: 8px !important;
+  overflow: hidden;
+}
+
+/* ── Photo image: fixed height, covers the width ────────────────────────── */
+.up-photo-img {
+  width: 100%;
+  max-height: 400px;
+  object-fit: contain;
+  background-color: #f5f5f5;
+}
+
+/* ── Content area below the photo ───────────────────────────────────────── */
+.up-photo-content {
+  padding: 12px 16px 16px !important;
+}
+
+.up-photo-date {
+  margin-bottom: 8px !important;
+}
+
+/* ── Comments container ──────────────────────────────────────────────────── */
+.up-comments-container {
+  margin-top: 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  overflow: hidden;
+  background-color: #fafafa;
+}
+
+.up-comments-heading {
+  padding: 6px 12px;
+  background-color: #eeeeee;
+  color: #424242;
+  font-size: 0.8rem !important;
+}
+
+/* ── Individual comment ──────────────────────────────────────────────────── */
+.up-comment {
+  padding: 10px 12px;
+}
+
+.up-comment-divider {
+  margin: 0 !important;
+}
+
+.up-comment-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+
+/* Clickable author name — styled as a link */
+.up-comment-author {
+  text-decoration: none;
+  color: #1565c0 !important;
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+}
+
+.up-comment-author:hover {
+  text-decoration: underline;
+}
+
+.up-comment-text {
+  color: #333333;
+  line-height: 1.5 !important;
+}
