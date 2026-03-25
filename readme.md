@@ -1,8 +1,8 @@
 # \<Photo App\> Group 16 / 49er Nav
 ## Product Owner
-\<Harrison Syfert\>
+\Group 16\
 ## Scrum Master
-\<Harrison Syfert\>
+\Cole Peterson\
 ## Developers
 - \<Cole Peterson\>
 - \<Warren Itenson\>
