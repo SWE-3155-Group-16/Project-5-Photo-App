@@ -49,3 +49,15 @@ William Brodersen User Stories:
 - [] Author's name is clickable
 - [] Navigates to /users/:userId
 - [] Correct user details load
+
+
+Cole Peterson's User Storie
+View Photo Comments Story
+1. As a user, I want to click on a comment author’s name, so that I can view their profile and interact with their other photos if I choose to
+
+Details:
+	•[] Author’s name is clickable
+	•[] Navigates to /users/:userId
+	•[] Correct user details load
+
+
