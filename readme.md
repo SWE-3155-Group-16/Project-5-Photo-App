@@ -7,6 +7,6 @@ Cole Peterson
 - \<Cole Peterson\>
 - \<Warren Itenson\>
 - \<Jeramiah Kaplan\>
-- \<William \>
+- \<William Brodersen\>
 - \<Harrison Syfert\>
 
