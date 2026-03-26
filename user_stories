@@ -13,7 +13,7 @@ Description
 Occupation
 Information is presented in a clear, readable layout
 
-Navigate to User Photos
+Navigate to User Photos Story
 -As a user, I want to navigate from a person’s profile to their photo collection so that I can continue exploring related content without searching manually.
 
 Details:
@@ -23,7 +23,7 @@ Clicking the control navigates to /photos/:userId
 The correct user ID is preserved in the route
 
 
-Dynamic TopBar
+Dynamic TopBar Story
 -As a user, I want the TopBar to display the name of the user whose profile I am viewing so that I always know whose information I am looking at.
 Details:
 
