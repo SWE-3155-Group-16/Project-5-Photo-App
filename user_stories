@@ -30,3 +30,22 @@ Details:
 The TopBar updates dynamically based on the selected user
 The user’s name appears on the right side of the TopBar
 The team name remains on the left side
+
+
+
+William Brodersen User Stories:
+
+1. As a user, I want to see all photos uploaded by a user so I am better able to explore their content
+- [] All photos for the selected user are displayed
+- [] Each photo shows: Image & upload date/time
+
+2. As a user, I want to read comments on each photo, so that I am able to see interactions with that photo and potentially interact with it myself
+- [] Each photo displays all associated comments
+- [] Each comment shows:
+     Comment text
+     Date/time
+     Comment author name
+3. As a user, I want to click on a comment author's name, so that I can view their profile and interact with their other photos if I choose to
+- [] Author's name is clickable
+- [] Navigates to /users/:userId
+- [] Correct user details load
