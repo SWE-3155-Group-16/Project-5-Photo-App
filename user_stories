@@ -1,0 +1,11 @@
+Harrison User stories:
+-James is a user, he wants to view a selected person’s profile details so that I can understand who they are and see their personal information in one place. 
+When he navigates to a user detail page, the application should retrieve the selected user’s information from the backend using the /user/:id endpoint. 
+The page should present the information in a readable layout so I can quickly scan the user’s identity and background.
+
+-Jerry wants to move directly from a person’s profile to their photo collection so that they can continue exploring related information without needing to search for it separately.
+The user detail page should include an obvious control, such as a button or link, that takes Jerry to the selected user’s photos. This navigation should preserve context by using the same user’s ID in the route.
+
+-Lisa wants the TopBar to show the name of the user whose profile she is viewing so that she always know which record she's currently looking at.
+The TopBar should provide page context. On the user detail screen, it should dynamically update to reflect the selected user’s name. 
+This helps orient the user and makes the interface feel connected to the current page content.
