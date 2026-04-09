@@ -11,6 +11,7 @@ import {
 import { Link } from "react-router-dom";
 import FetchModel from "../../lib/fetchModelData";
 import "./userPhotos.css";
+import axios from 'axios'
  
 class UserPhotos extends React.Component {
   constructor(props) {
