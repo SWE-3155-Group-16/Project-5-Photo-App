@@ -3,6 +3,7 @@ import {
   Typography
 } from '@mui/material';
 import './userDetail.css';
+import axios from 'axios'
 
 
 /**
