@@ -1,85 +1,78 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import {
-  Divider,
   List,
-  ListItem,
+  ListItemButton,
   ListItemText,
-  Typography,
 }
 from '@mui/material';
 import './userList.css';
-import axios from 'axios'
+import axios from 'axios';
 
 /**
  * Define UserList, a React component of project #5
  */
 class UserList extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      users: [],
-      loading: true,
-      error: null,
-    };
-  }
+    constructor(props) {
+        super(props);
+        this.state = {
+                users: undefined,
+                user_id: undefined
+            };
+    }
 
-  componentDidMount() {
-    // Fetch user list from the server
-    fetch('/user/list')
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+    componentDidMount() {
+        this.handleUserListChange();
+    }
+
+    componentDidUpdate() {
+        const new_user_id = this.props.match?.params.userId;
+        //console.log(new_user_id);
+        const current_user_id = this.state.user_id;
+        //console.log(current_user_id);
+        if (current_user_id  !== new_user_id){
+            this.handleUserChange(new_user_id);
         }
-        return response.json();
-      })
-      .then(data => {
+    }
+
+    handleUserChange(user_id){
         this.setState({
-          users: data,
-          loading: false,
+            user_id: user_id
         });
-      })
-      .catch(error => {
-        console.error('Error fetching users:', error);
-        this.setState({
-          error: error.message,
-          loading: false,
-        });
-      });
-  }
+    }
+
+    handleUserListChange(){
+        axios.get("/user/list")
+            .then((response) =>
+            {
+                this.setState({
+                    users: response.data
+                });
+            });
+    }
 
   render() {
-    const { users, loading, error } = this.state;
-
-    if (loading) {
-      return <Typography variant="body2">Loading users...</Typography>;
-    }
-
-    if (error) {
-      return <Typography variant="body2" color="error">Error loading users: {error}</Typography>;
-    }
-
-    return (
-      <div>
-        <Typography variant="h6" style={{ marginBottom: '16px' }}>
-          Users
-        </Typography>
+    return this.state.users ?(
+        <div>
         <List component="nav">
-          {users.map((user, index) => (
-            <div key={user._id}>
-              <Link to={`/users/${user._id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                <ListItem sx={{ '&:hover': { backgroundColor: '#f5f5f5' }, cursor: 'pointer' }}>
-                  <ListItemText
-                    primary={`${user.first_name} ${user.last_name}`}
-                    secondary={user.occupation}
-                  />
-                </ListItem>
-              </Link>
-              {index < users.length - 1 && <Divider />}
-            </div>
-          ))}
+            {
+                this.state.users.map(user => (
+                <ListItemButton selected={this.state.user_id === user._id}
+                                key={user._id}
+                                divider={true}
+                                component="a" href={"#/users/" + user._id}>
+                    <ListItemText primary={user.first_name + " " + user.last_name} />
+                </ListItemButton>
+            ))
+            }
         </List>
-      </div>
+        </div>
+    ) : (
+        <div/>
+    );
+  }
+}
+
+export default UserList;
     );
   }
 }
