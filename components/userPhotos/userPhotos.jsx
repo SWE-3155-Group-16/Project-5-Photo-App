@@ -9,7 +9,7 @@ import {
   Box,
 } from "@mui/material";
 import { Link } from "react-router-dom";
-import FetchModel from "../../lib/fetchModelData";
+
 import "./userPhotos.css";
 import axios from 'axios'
  
