@@ -1,0 +1,63 @@
+Harrison User stories:
+
+View User Detials Story
+-As a user, I want to view a selected person’s profile details so that I can understand who they are and see their personal information in one place.
+Details:
+
+The application retrieves user data from /user/:id
+The page displays the user’s:
+First name
+Last name
+Location
+Description
+Occupation
+Information is presented in a clear, readable layout
+
+Navigate to User Photos Story
+-As a user, I want to navigate from a person’s profile to their photo collection so that I can continue exploring related content without searching manually.
+
+Details:
+
+The user detail page includes a button or link to view photos
+Clicking the control navigates to /photos/:userId
+The correct user ID is preserved in the route
+
+
+Dynamic TopBar Story
+-As a user, I want the TopBar to display the name of the user whose profile I am viewing so that I always know whose information I am looking at.
+Details:
+
+The TopBar updates dynamically based on the selected user
+The user’s name appears on the right side of the TopBar
+The team name remains on the left side
+
+
+
+William Brodersen User Stories:
+
+1. As a user, I want to see all photos uploaded by a user so I am better able to explore their content
+- [] All photos for the selected user are displayed
+- [] Each photo shows: Image & upload date/time
+
+2. As a user, I want to read comments on each photo, so that I am able to see interactions with that photo and potentially interact with it myself
+- [] Each photo displays all associated comments
+- [] Each comment shows:
+     Comment text
+     Date/time
+     Comment author name
+3. As a user, I want to click on a comment author's name, so that I can view their profile and interact with their other photos if I choose to
+- [] Author's name is clickable
+- [] Navigates to /users/:userId
+- [] Correct user details load
+
+
+Cole Peterson's User Storie
+View Photo Comments Story
+1. As a user, I want to click on a comment author’s name, so that I can view their profile and interact with their other photos if I choose to
+
+Details:
+	•[] Author’s name is clickable
+	•[] Navigates to /users/:userId
+	•[] Correct user details load
+
+

@@ -3,6 +3,7 @@ import {
   AppBar, Toolbar, Typography
 } from '@mui/material';
 import './TopBar.css';
+import axios from 'axios';
 
 /**
  * Define TopBar, a React component of project #5
