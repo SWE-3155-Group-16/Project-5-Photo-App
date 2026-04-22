@@ -1,17 +1,20 @@
-// ...existing code...
 import { useState, useEffect } from 'react';
 import LoginRegister from './components/LoginRegister';
-// ...existing code...
 
 const App = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(null);
 
   useEffect(() => {
-    // Check auth on load
     fetch('/admin/me')
-      .then(res => res.ok ? setIsAuthenticated(true) : setIsAuthenticated(false))
+      .then(res => {
+        setIsAuthenticated(res.ok);
+      })
       .catch(() => setIsAuthenticated(false));
   }, []);
+
+  if (isAuthenticated === null) {
+    return <div>Loading...</div>;
+  }
 
   if (!isAuthenticated) {
     return <LoginRegister />;
@@ -21,5 +24,5 @@ const App = () => {
     // ...existing code...
   );
 };
-// ...existing code...
 
+export default App;

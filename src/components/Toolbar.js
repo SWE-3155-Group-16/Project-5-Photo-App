@@ -1,21 +1,21 @@
-// ...existing code...
 import { useState, useEffect } from 'react';
-// ...existing code...
 
 const Toolbar = () => {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // Fetch user info from session (assume a /admin/me endpoint)
     fetch('/admin/me')
-      .then(res => res.json())
-      .then(data => setUser(data.user))
+      .then(res => res.ok ? res.json() : null)
+      .then(data => setUser(data?.user))
       .catch(() => setUser(null));
   }, []);
 
   const handleLogout = () => {
     fetch('/admin/logout', { method: 'POST' })
-      .then(() => setUser(null))
+      .then(() => {
+        setUser(null);
+        window.location.href = '/login';
+      })
       .catch(console.error);
   };
 
@@ -29,9 +29,8 @@ const Toolbar = () => {
       ) : (
         <button onClick={() => window.location.href = '/login'}>Login</button>
       )}
-      // ...existing code...
     </div>
   );
 };
-// ...existing code...
 
+export default Toolbar;
