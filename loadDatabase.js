@@ -1,44 +1,147 @@
-const { MongoClient } = require('mongodb');
-const models = require('./modelData/photoApp.js').models;
+/**
+ * This Node.js program loads the Project 7 model data into Mongoose
+ * defined objects in a MongoDB database. It can be run with the command:
+ *     node loadDatabase.js
+ * Be sure to have an instance of the MongoDB running on the localhost.
+ *
+ * This script loads the data into the MongoDB database named 'project6'.
+ * In loads into collections named User and Photos. The Comments are added in
+ * the Photos of the comments. Any previous objects in those collections are
+ * discarded.
+ */
 
-async function loadDatabase() {
-  const uri = 'mongodb://localhost:27017';
-  const client = new MongoClient(uri);
+// We use the Mongoose to define the schema stored in MongoDB.
+const mongoose = require("mongoose");
+mongoose.Promise = require("bluebird");
+mongoose.set("strictQuery", false);
+mongoose.connect("mongodb://127.0.0.1/project6", {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
 
-  try {
-    await client.connect();
-    console.log('Connected to MongoDB');
+// Get the magic models we used in the previous projects.
+const models = require("./modelData/photoApp.js").models;
 
-    const db = client.db('photoApp');
+// Load the Mongoose schema for Use and Photo
+const User = require("./schema/user.js");
+const Photo = require("./schema/photo.js");
+const SchemaInfo = require("./schema/schemaInfo.js");
 
-    // Drop existing collections to avoid duplicates
-    await db.collection('users').drop().catch(() => {});
-    await db.collection('photos').drop().catch(() => {});
-    await db.collection('schema').drop().catch(() => {});
+const versionString = "1.0";
 
-    // Load users
-    const users = models.userListModel();
-    await db.collection('users').insertMany(users);
-    console.log('Users loaded');
+// We start by removing anything that existing in the collections.
+const removePromises = [
+  User.deleteMany({}),
+  Photo.deleteMany({}),
+  SchemaInfo.deleteMany({}),
+];
 
-    // Load photos for each user
-    for (const user of users) {
-      const photos = models.photoOfUserModel(user._id);
-      if (photos.length > 0) {
-        await db.collection('photos').insertMany(photos);
-        console.log(`Photos for user ${user._id} loaded`);
-      }
-    }
+Promise.all(removePromises)
+  .then(function () {
+    // Load the users into the User. Mongo assigns ids to objects so we record
+    // the assigned '_id' back into the model.userListModels so we have it
+    // later in the script.
 
-    // Load schema info
-    const schema = models.schemaModel();
-    await db.collection('schema').insertOne(schema);
-    console.log('Schema loaded');
+    const userModels = models.userListModel();
+    const mapFakeId2RealId = {};
+    const userPromises = userModels.map(function (user) {
+      return User.create({
+        first_name: user.first_name,
+        last_name: user.last_name,
+        location: user.location,
+        description: user.description,
+        occupation: user.occupation,
+        login_name: user.last_name.toLowerCase(),
+        password: "weak",
+      })
+        .then(function (userObj) {
+          // Set the unique ID of the object. We use the MongoDB generated _id
+          // for now but we keep it distinct from the MongoDB ID so we can go to
+          // something prettier in the future since these show up in URLs, etc.
+          userObj.save();
+          mapFakeId2RealId[user._id] = userObj._id;
+          user.objectID = userObj._id;
+          console.log(
+            "Adding user:",
+            user.first_name + " " + user.last_name,
+            " with ID ",
+            user.objectID
+          );
+        })
+        .catch(function (err) {
+          console.error("Error create user", err);
+        });
+    });
 
-  } finally {
-    await client.close();
-    console.log('Database connection closed');
-  }
-}
+    const allPromises = Promise.all(userPromises).then(function () {
+      // Once we've loaded all the users into the User collection we add all the
+      // photos. Note that the user_id of the photo is the MongoDB assigned id
+      // in the User object.
+      const photoModels = [];
+      const userIDs = Object.keys(mapFakeId2RealId);
+      userIDs.forEach(function (id) {
+        photoModels.push(...models.photoOfUserModel(id));
+      });
 
-loadDatabase().catch(console.error);
+      const photoPromises = photoModels.map(function (photo) {
+        return Photo.create({
+          file_name: photo.file_name,
+          date_time: photo.date_time,
+          user_id: mapFakeId2RealId[photo.user_id],
+        })
+          .then(function (photoObj) {
+            photo.objectID = photoObj._id;
+            if (photo.comments) {
+              photo.comments.forEach(function (comment) {
+                photoObj.comments = photoObj.comments.concat([
+                  {
+                    comment: comment.comment,
+                    date_time: comment.date_time,
+                    user_id: comment.user.objectID,
+                  },
+                ]);
+                console.log(
+                  "Adding comment of length %d by user %s to photo %s",
+                  comment.comment.length,
+                  comment.user.objectID,
+                  photo.file_name
+                );
+              });
+            }
+            photoObj.save();
+            console.log(
+              "Adding photo:",
+              photo.file_name,
+              " of user ID ",
+              photoObj.user_id
+            );
+          })
+          .catch(function (err) {
+            console.error("Error create user", err);
+          });
+      });
+      return Promise.all(photoPromises).then(function () {
+        // Create the SchemaInfo object
+        return SchemaInfo.create({
+          version: versionString,
+        })
+          .then(function (schemaInfo) {
+            console.log(
+              "SchemaInfo object created with version ",
+              schemaInfo.version
+            );
+          })
+          .catch(function (err) {
+            console.error("Error create schemaInfo", err);
+          });
+      });
+    });
+
+    allPromises.then(function () {
+      mongoose.disconnect()
+           .then(() =>{console.log("loadDatabase Completed");});
+    });
+  })
+  .catch(function (err) {
+    console.error("Error create schemaInfo", err);
+  });
