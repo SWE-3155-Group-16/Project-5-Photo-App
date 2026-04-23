@@ -10,19 +10,169 @@
 
 const express = require('express');
 const mongoose = require('mongoose');
+const session = require('express-session');
+const bodyParser = require('body-parser');
 
-const User = require('./schema/user.js');
-const Photo = require('./schema/photo.js');
-const SchemaInfo = require('./schema/schemaInfo.js');
+const User = require("./models/User.js");
+const Photo = require("./models/photo.js");
+const SchemaInfo = require("./models/schemaInfo.js");
 
 const portno = 3000;
 const app = express();
+
+app.use(
+  session({
+    secret: 'secretKey',
+    resave: false,
+    saveUninitialized: false
+  })
+);
+app.use(bodyParser.json());
 
 // Serve static files from current directory.
 app.use(express.static(__dirname));
 
 app.get('/', function (request, response) {
   response.send('Simple web server of files from ' + __dirname);
+});
+
+/*
+ * POST /admin/login
+ * Log in a user with login_name and password.
+ */
+app.post('/admin/login', async (request, response) => {
+  try {
+    const { login_name, password } = request.body;
+
+    if (
+      !login_name ||
+      typeof login_name !== 'string' ||
+      login_name.trim() === '' ||
+      !password ||
+      typeof password !== 'string' ||
+      password.trim() === ''
+    ) {
+      return response.status(400).send('login_name and password are required');
+    }
+
+    const user = await User.findOne({
+      login_name: login_name.trim(),
+      password: password.trim()
+    });
+
+    if (!user) {
+      return response.status(400).send('Invalid login name or password');
+    }
+
+    request.session.user_id = user._id;
+    request.session.login_name = user.login_name;
+
+    return response.status(200).send({
+      _id: user._id,
+      first_name: user.first_name,
+      last_name: user.last_name
+    });
+  } catch (err) {
+    console.error('Error logging in', err);
+    return response.status(400).send('Error logging in');
+  }
+});
+
+/*
+ * POST /admin/logout
+ * Log out current user.
+ */
+app.post('/admin/logout', (request, response) => {
+  if (!request.session.user_id) {
+    return response.status(400).send('No user is currently logged in');
+  }
+
+  request.session.destroy((err) => {
+    if (err) {
+      console.error('Error logging out', err);
+      return response.status(400).send('Error logging out');
+    }
+    return response.status(200).send({});
+  });
+});
+
+/*
+ * POST /user
+ * Register a new user.
+ */
+app.post('/user', async (request, response) => {
+  try {
+    const {
+      login_name,
+      password,
+      first_name,
+      last_name,
+      location,
+      description,
+      occupation
+    } = request.body;
+
+    if (
+      !login_name ||
+      typeof login_name !== 'string' ||
+      login_name.trim() === ''
+    ) {
+      return response.status(400).send('login_name is required');
+    }
+
+    if (
+      !password ||
+      typeof password !== 'string' ||
+      password.trim() === ''
+    ) {
+      return response.status(400).send('password is required');
+    }
+
+    if (
+      !first_name ||
+      typeof first_name !== 'string' ||
+      first_name.trim() === ''
+    ) {
+      return response.status(400).send('first_name is required');
+    }
+
+    if (
+      !last_name ||
+      typeof last_name !== 'string' ||
+      last_name.trim() === ''
+    ) {
+      return response.status(400).send('last_name is required');
+    }
+
+    const existingUser = await User.findOne({ login_name: login_name.trim() });
+
+    if (existingUser) {
+      return response.status(400).send('login_name already exists');
+    }
+
+    const newUser = await User.create({
+      login_name: login_name.trim(),
+      password: password.trim(),
+      first_name: first_name.trim(),
+      last_name: last_name.trim(),
+      location: location ? location.trim() : '',
+      description: description ? description.trim() : '',
+      occupation: occupation ? occupation.trim() : ''
+    });
+
+    return response.status(200).send({
+      _id: newUser._id,
+      first_name: newUser.first_name,
+      last_name: newUser.last_name,
+      location: newUser.location,
+      description: newUser.description,
+      occupation: newUser.occupation,
+      login_name: newUser.login_name
+    });
+  } catch (err) {
+    console.error('Error registering user', err);
+    return response.status(400).send('Error registering user');
+  }
 });
 
 /*
@@ -98,14 +248,19 @@ app.get('/test/counts', async (req, res) => {
 
 /*
  * URL /user/list - Return all users with only _id, first_name, last_name.
+ * Requires login.
  */
 app.get('/user/list', async (req, res) => {
+  if (!req.session.user_id) {
+    return res.status(401).send('Unauthorized');
+  }
+
   try {
     const users = await User.find({}, '_id first_name last_name');
-    res.status(200).send(users);
+    return res.status(200).send(users);
   } catch (err) {
     console.error('Error fetching user list', err);
-    res.status(500).send({ error: 'Error fetching user list' });
+    return res.status(500).send({ error: 'Error fetching user list' });
   }
 });
 
@@ -113,8 +268,13 @@ app.get('/user/list', async (req, res) => {
  * URL /user/:id - Return user details:
  *   _id, first_name, last_name, location, description, occupation
  * Return 400 for invalid IDs or missing user.
+ * Requires login.
  */
 app.get('/user/:id', async (req, res) => {
+  if (!req.session.user_id) {
+    return res.status(401).send('Unauthorized');
+  }
+
   const id = req.params.id;
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -131,10 +291,10 @@ app.get('/user/:id', async (req, res) => {
       return res.status(400).send({ error: 'User not found' });
     }
 
-    res.status(200).send(user);
+    return res.status(200).send(user);
   } catch (err) {
     console.error('Error fetching user', err);
-    res.status(500).send({ error: 'Error fetching user' });
+    return res.status(500).send({ error: 'Error fetching user' });
   }
 });
 
@@ -145,8 +305,13 @@ app.get('/user/:id', async (req, res) => {
  * Each comment must include:
  *   comment, date_time, user: { _id, first_name, last_name }
  * Return 400 for invalid IDs.
+ * Requires login.
  */
 app.get('/photosOfUser/:id', async (req, res) => {
+  if (!req.session.user_id) {
+    return res.status(401).send('Unauthorized');
+  }
+
   const id = req.params.id;
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -159,10 +324,8 @@ app.get('/photosOfUser/:id', async (req, res) => {
     const result = [];
 
     for (const photo of photos) {
-      // Clone Mongoose document to plain object
       const cleanPhoto = JSON.parse(JSON.stringify(photo));
 
-      // Populate each comment's user field
       for (const comment of cleanPhoto.comments) {
         const user = await User.findById(
           comment.user_id,
@@ -174,10 +337,10 @@ app.get('/photosOfUser/:id', async (req, res) => {
       result.push(cleanPhoto);
     }
 
-    res.status(200).send(result);
+    return res.status(200).send(result);
   } catch (err) {
     console.error('Error fetching photos', err);
-    res.status(500).send({ error: 'Error fetching photos' });
+    return res.status(500).send({ error: 'Error fetching photos' });
   }
 });
 
@@ -185,10 +348,9 @@ app.get('/photosOfUser/:id', async (req, res) => {
  * Start server after connecting to MongoDB.
  */
 mongoose
-  .connect('mongodb://127.0.0.1:27017/cs142project6', {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-  })
+  .connect('mongodb://127.0.0.1:27017/project6')
+
+  
   .then(() => {
     const server = app.listen(portno, function () {
       const port = server.address().port;

@@ -4,7 +4,7 @@ import {
   Button
 } from '@mui/material';
 import { Link } from 'react-router-dom';
-import './userDetails.css';
+import './userDetail.css';
 
 /**
  * Define UserDetail, a React component of project #5

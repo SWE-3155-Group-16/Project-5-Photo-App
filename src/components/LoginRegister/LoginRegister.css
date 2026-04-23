@@ -1,0 +1,16 @@
+.login-register-container {
+  padding: 16px;
+}
+
+.login-section,
+.register-section {
+  margin-bottom: 24px;
+}
+
+.login-register-error {
+  color: red;
+}
+
+.login-register-success {
+  color: green;
+}

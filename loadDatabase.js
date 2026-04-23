@@ -14,18 +14,15 @@
 const mongoose = require("mongoose");
 mongoose.Promise = require("bluebird");
 mongoose.set("strictQuery", false);
-mongoose.connect("mongodb://127.0.0.1/project6", {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+mongoose.connect("mongodb://127.0.0.1:27017/project6");
 
 // Get the magic models we used in the previous projects.
 const models = require("./modelData/photoApp.js").models;
 
 // Load the Mongoose schema for Use and Photo
-const User = require("./schema/user.js");
-const Photo = require("./schema/photo.js");
-const SchemaInfo = require("./schema/schemaInfo.js");
+const User = require("./models/User.js");
+const Photo = require("./models/photo.js");
+const SchemaInfo = require("./models/schemaInfo.js");
 
 const versionString = "1.0";
 
@@ -38,12 +35,9 @@ const removePromises = [
 
 Promise.all(removePromises)
   .then(function () {
-    // Load the users into the User. Mongo assigns ids to objects so we record
-    // the assigned '_id' back into the model.userListModels so we have it
-    // later in the script.
-
     const userModels = models.userListModel();
     const mapFakeId2RealId = {};
+
     const userPromises = userModels.map(function (user) {
       return User.create({
         first_name: user.first_name,
@@ -55,10 +49,6 @@ Promise.all(removePromises)
         password: "weak",
       })
         .then(function (userObj) {
-          // Set the unique ID of the object. We use the MongoDB generated _id
-          // for now but we keep it distinct from the MongoDB ID so we can go to
-          // something prettier in the future since these show up in URLs, etc.
-          userObj.save();
           mapFakeId2RealId[user._id] = userObj._id;
           user.objectID = userObj._id;
           console.log(
@@ -73,10 +63,7 @@ Promise.all(removePromises)
         });
     });
 
-    const allPromises = Promise.all(userPromises).then(function () {
-      // Once we've loaded all the users into the User collection we add all the
-      // photos. Note that the user_id of the photo is the MongoDB assigned id
-      // in the User object.
+    return Promise.all(userPromises).then(function () {
       const photoModels = [];
       const userIDs = Object.keys(mapFakeId2RealId);
       userIDs.forEach(function (id) {
@@ -108,20 +95,22 @@ Promise.all(removePromises)
                 );
               });
             }
-            photoObj.save();
-            console.log(
-              "Adding photo:",
-              photo.file_name,
-              " of user ID ",
-              photoObj.user_id
-            );
+
+            return photoObj.save().then(function () {
+              console.log(
+                "Adding photo:",
+                photo.file_name,
+                " of user ID ",
+                photoObj.user_id
+              );
+            });
           })
           .catch(function (err) {
-            console.error("Error create user", err);
+            console.error("Error create photo", err);
           });
       });
+
       return Promise.all(photoPromises).then(function () {
-        // Create the SchemaInfo object
         return SchemaInfo.create({
           version: versionString,
         })
@@ -136,12 +125,15 @@ Promise.all(removePromises)
           });
       });
     });
-
-    allPromises.then(function () {
-      mongoose.disconnect()
-           .then(() =>{console.log("loadDatabase Completed");});
-    });
+  })
+  .then(function () {
+    console.log("loadDatabase Completed");
+    setTimeout(async () => {
+      await mongoose.disconnect();
+      process.exit(0);
+    }, 200);
   })
   .catch(function (err) {
-    console.error("Error create schemaInfo", err);
+    console.error("Error finishing loadDatabase", err);
+    process.exit(1);
   });
