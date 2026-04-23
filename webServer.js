@@ -181,6 +181,47 @@ app.get('/photosOfUser/:id', async (req, res) => {
   }
 });
 
+/* URL /commentsOfPhoto/:photo_id - adds a new comment on photo for the current user
+ */
+app.post("/commentsOfPhoto/:photo_id", function (request, response) {
+  if (hasNoUserSession(request, response)) return;
+  const id = request.params.photo_id || "";
+  const user_id = getSessionUserID(request) || "";
+  const comment = request.body.comment || "";
+  if (id === "") {
+    response.status(400).send("id required");
+    return;
+  }
+  if (user_id === "") {
+    response.status(400).send("user_id required");
+    return;
+  }
+  if (comment === "") {
+    response.status(400).send("comment required");
+    return;
+  }
+  Photo.updateOne(
+      { _id: new mongoose.Types.ObjectId(id) },
+      { $push: {
+          comments: {
+            comment: comment,
+            date_time: new Date(),
+            user_id: new mongoose.Types.ObjectId(user_id),
+            _id: new mongoose.Types.ObjectId()
+          }
+        } },
+   function (err) {
+    if (err) {
+      // Query returned an error. We pass it back to the browser with an
+      // Internal Service Error (500) error code.
+      console.error("Error in /commentsOfPhoto/:photo_id", err);
+      response.status(500).send(JSON.stringify(err));
+      return;
+    }
+    response.end();
+  });
+});
+
 /*
  * Start server after connecting to MongoDB.
  */
