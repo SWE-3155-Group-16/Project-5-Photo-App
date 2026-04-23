@@ -1,111 +1,59 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import {
-  HashRouter, Route, Switch, Redirect
+  HashRouter, Route, Switch
 } from 'react-router-dom';
 import {
   Grid, Typography, Paper
 } from '@mui/material';
 import './styles/main.css';
 
-// import necessary components
+// Import necessary components
 import TopBar from './components/topBar/TopBar';
 import UserDetail from './components/userDetail/userDetail';
 import UserList from './components/userList/userList';
 import UserPhotos from './components/userPhotos/userPhotos';
-import LoginRegister from './src/components/LoginRegister/LoginRegister';
 
 class PhotoShare extends React.Component {
   constructor(props) {
     super(props);
-
-    this.state = {
-      currentUser: null
-    };
-
-    this.handleLogin = this.handleLogin.bind(this);
-    this.handleLogout = this.handleLogout.bind(this);
+    // photoRefreshKey is incremented after a successful upload so UserPhotos re-fetches
+    this.state = { photoRefreshKey: 0 };
   }
 
-  handleLogin(user) {
-    this.setState({
-      currentUser: user
-    });
-  }
-
-  handleLogout() {
-    this.setState({
-      currentUser: null
-    });
-  }
+  handlePhotoUploaded = () => {
+    this.setState(prev => ({ photoRefreshKey: prev.photoRefreshKey + 1 }));
+  };
 
   render() {
-    const { currentUser } = this.state;
+    const { photoRefreshKey } = this.state;
 
     return (
       <HashRouter>
         <div>
-          <TopBar currentUser={currentUser} onLogout={this.handleLogout} />
+          <TopBar onPhotoUploaded={this.handlePhotoUploaded} />
           <div className="main-topbar-buffer" />
           <Grid container spacing={2} style={{ padding: '16px' }}>
             <Grid item xs={12} sm={3}>
               <Paper className="main-grid-item">
-                {currentUser ? <UserList /> : null}
+                <UserList />
               </Paper>
             </Grid>
             <Grid item xs={12} sm={9}>
               <Paper className="main-grid-item">
                 <Switch>
-                  <Route
-                    exact
-                    path="/login-register"
-                    render={(props) => (
-                      <LoginRegister {...props} onLogin={this.handleLogin} />
-                    )}
+                  <Route exact path="/" render={() => (
+                    <Typography variant="body1">
+                      Welcome to PhotoShare! Select a user from the list to view their photos.
+                    </Typography>
+                  )} />
+                  <Route path="/users/:userId"
+                    render={props => <UserDetail {...props} />}
                   />
-
-                  <Route
-                    exact
-                    path="/"
-                    render={() => (
-                      currentUser ? (
-                        <Typography variant="body1">
-                          Welcome to your photosharing app!
-                        </Typography>
-                      ) : (
-                        <Redirect to="/login-register" />
-                      )
-                    )}
+                  <Route path="/photos/:userId"
+                    render={props => <UserPhotos {...props} refreshKey={photoRefreshKey} />}
                   />
-
-                  <Route
-                    path="/users/:userId"
-                    render={(props) => (
-                      currentUser ? (
-                        <UserDetail {...props} />
-                      ) : (
-                        <Redirect to="/login-register" />
-                      )
-                    )}
-                  />
-
-                  <Route
-                    path="/photos/:userId"
-                    render={(props) => (
-                      currentUser ? (
-                        <UserPhotos {...props} />
-                      ) : (
-                        <Redirect to="/login-register" />
-                      )
-                    )}
-                  />
-
-                  <Route
-                    path="/users"
-                    render={() => (
-                      currentUser ? <UserList /> : <Redirect to="/login-register" />
-                    )}
-                  />
+                  <Route path="/users" component={UserList} />
                 </Switch>
               </Paper>
             </Grid>
