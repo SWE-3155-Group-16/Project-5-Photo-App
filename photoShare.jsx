@@ -7,10 +7,8 @@ import {
   Grid, Typography, Paper
 } from '@mui/material';
 import './styles/main.css';
-import axios from 'axios'
 
-
-// import necessary components
+// Import necessary components
 import TopBar from './components/topBar/TopBar';
 import UserDetail from './components/userDetail/userDetail';
 import UserList from './components/userList/userList';
@@ -19,13 +17,21 @@ import UserPhotos from './components/userPhotos/userPhotos';
 class PhotoShare extends React.Component {
   constructor(props) {
     super(props);
+    // photoRefreshKey is incremented after a successful upload so UserPhotos re-fetches
+    this.state = { photoRefreshKey: 0 };
   }
 
+  handlePhotoUploaded = () => {
+    this.setState(prev => ({ photoRefreshKey: prev.photoRefreshKey + 1 }));
+  };
+
   render() {
+    const { photoRefreshKey } = this.state;
+
     return (
       <HashRouter>
         <div>
-          <TopBar />
+          <TopBar onPhotoUploaded={this.handlePhotoUploaded} />
           <div className="main-topbar-buffer" />
           <Grid container spacing={2} style={{ padding: '16px' }}>
             <Grid item xs={12} sm={3}>
@@ -36,25 +42,18 @@ class PhotoShare extends React.Component {
             <Grid item xs={12} sm={9}>
               <Paper className="main-grid-item">
                 <Switch>
-                  <Route exact path="/"
-                    render={() => (
-                      <Typography variant="body1">
-                        Welcome to your photosharing app! This <a href="https://mui.com/components/paper/">Paper</a> component
-                        displays the main content of the application. The {"sm={9}"} prop in
-                        the <a href="https://mui.com/components/grid/">Grid</a> item component makes it responsively
-                        display 9/12 of the window. The Switch component enables us to conditionally render different
-                        components to this part of the screen. You don&apos;t need to display anything here on the homepage,
-                        so you should delete this Route component once you get started.
-                      </Typography>
-                    )}
-                  />
+                  <Route exact path="/" render={() => (
+                    <Typography variant="body1">
+                      Welcome to PhotoShare! Select a user from the list to view their photos.
+                    </Typography>
+                  )} />
                   <Route path="/users/:userId"
-                    render={ props => <UserDetail {...props} /> }
+                    render={props => <UserDetail {...props} />}
                   />
                   <Route path="/photos/:userId"
-                    render ={ props => <UserPhotos {...props} /> }
+                    render={props => <UserPhotos {...props} refreshKey={photoRefreshKey} />}
                   />
-                  <Route path="/users" component={UserList}  />
+                  <Route path="/users" component={UserList} />
                 </Switch>
               </Paper>
             </Grid>
@@ -64,7 +63,6 @@ class PhotoShare extends React.Component {
     );
   }
 }
-
 
 ReactDOM.render(
   <PhotoShare />,
