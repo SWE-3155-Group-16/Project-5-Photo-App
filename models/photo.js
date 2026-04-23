@@ -1,16 +1,18 @@
-const mongoose = require("mongoose");
+'use strict';
+
+const mongoose = require('mongoose');
 
 const commentSchema = new mongoose.Schema({
-  comment: String,
-  date_time: Date,
-  user_id: mongoose.Schema.Types.ObjectId
+  comment: { type: String, required: true },
+  date_time: { type: Date, default: Date.now },
+  user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
 });
 
 const photoSchema = new mongoose.Schema({
-  file_name: String,
-  date_time: Date,
-  user_id: mongoose.Schema.Types.ObjectId,
-  comments: [commentSchema]
+  file_name: { type: String, required: true },
+  date_time: { type: Date, default: Date.now },
+  user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  comments: [commentSchema],
 });
 
-module.exports = mongoose.model("Photo", photoSchema);
+module.exports = mongoose.model('Photo', photoSchema);
