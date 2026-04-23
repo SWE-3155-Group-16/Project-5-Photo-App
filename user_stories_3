@@ -12,6 +12,7 @@ William Brodersen User Stories:
 4. As a user, I want my password to be hidden while typing, so that my information is private
 - Password fields use masked input
 - No plain text visible
+
 Warren Itenson's User Stories:
 1. As a user, I want to upload a photo from my device, so that I can store it in my account
  - “Add Photo” button is visible only when logged in
