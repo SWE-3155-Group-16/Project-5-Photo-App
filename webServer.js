@@ -1,92 +1,206 @@
 'use strict';
 
 /*
- * A simple Node.js program for exporting the current working directory via a webserver listing
- * on a hard code (see portno below) port. To start the webserver run the command:
+ * Simple Node.js web server for the Photo App backend using MongoDB + Mongoose.
+ * Start with:
  *    node webServer.js
- *
- * Note that anyone able to connect to localhost:3001 will be able to fetch any file accessible
- * to the current user in the current directory or any of its children.
  */
 
 /* jshint node: true */
 
-var express = require('express');
+const express = require('express');
+const mongoose = require('mongoose');
 
-var portno = 3000;   // Port number to use
+const User = require('./schema/user.js');
+const Photo = require('./schema/photo.js');
+const SchemaInfo = require('./schema/schemaInfo.js');
 
-var app = express();
+const portno = 3000;
+const app = express();
 
-var models = require('./modelData/photoApp.js').models;
-
-// We have the express static module (http://expressjs.com/en/starter/static-files.html) do all
-// the work for us.
+// Serve static files from current directory.
 app.use(express.static(__dirname));
 
 app.get('/', function (request, response) {
   response.send('Simple web server of files from ' + __dirname);
 });
 
-app.get('/test/:p1', function (request, response) {
-  // Express parses the ":p1" from the URL and returns it in the request.params objects.
-  var param = request.params.p1;
+/*
+ * URL /test/:p1
+ *  - /test/info   → return SchemaInfo from DB
+ *  - /test/counts → return counts of User, Photo, SchemaInfo
+ */
+app.get('/test/:p1', async (request, response) => {
+  const param = request.params.p1;
   console.log('/test called with param1 = ', param);
-  if (param !== "info") {
-    console.error("Nothing to be done for param: ", param);
-    response.status(400).send('Not found');
-    return;
+
+  try {
+    if (param === 'info') {
+      const info = await SchemaInfo.find({});
+      if (!info || info.length === 0) {
+        return response.status(500).send('Missing SchemaInfo');
+      }
+      return response.status(200).send(info[0]);
+    }
+
+    if (param === 'counts') {
+      const userCount = await User.countDocuments({});
+      const photoCount = await Photo.countDocuments({});
+      const schemaInfoCount = await SchemaInfo.countDocuments({});
+
+      return response.status(200).send({
+        user: userCount,
+        photo: photoCount,
+        schemaInfo: schemaInfoCount
+      });
+    }
+
+    console.error('Nothing to be done for param: ', param);
+    return response.status(400).send('Not found');
+  } catch (err) {
+    console.error('Error in /test/:p1', err);
+    return response.status(500).send({ error: 'Internal error' });
   }
-  
-  var info = models.schemaInfo();
-  
-  // Query didn't return an error but didn't find the SchemaInfo object - This
-  // is also an internal error return.
-  if (info.length === 0) {
-    response.status(500).send('Missing SchemaInfo');
-    return;
-  }
-  response.status(200).send(info);
 });
 
 /*
- * URL /user/list - Return all the User object.
+ * Optional explicit endpoints if your tests call /test/info and /test/counts directly.
  */
-app.get('/user/list', function (request, response) {
-  response.status(200).send(models.userListModel());
-  return;
+app.get('/test/info', async (req, res) => {
+  try {
+    const info = await SchemaInfo.find({});
+    if (!info || info.length === 0) {
+      return res.status(500).send('Missing SchemaInfo');
+    }
+    res.status(200).send(info[0]);
+  } catch (err) {
+    console.error('Error fetching schema info', err);
+    res.status(500).send({ error: 'Error fetching schema info' });
+  }
+});
+
+app.get('/test/counts', async (req, res) => {
+  try {
+    const userCount = await User.countDocuments({});
+    const photoCount = await Photo.countDocuments({});
+    const schemaInfoCount = await SchemaInfo.countDocuments({});
+
+    res.status(200).send({
+      user: userCount,
+      photo: photoCount,
+      schemaInfo: schemaInfoCount
+    });
+  } catch (err) {
+    console.error('Error fetching counts', err);
+    res.status(500).send({ error: 'Error fetching counts' });
+  }
 });
 
 /*
- * URL /user/:id - Return the information for User (id)
+ * URL /user/list - Return all users with only _id, first_name, last_name.
  */
-app.get('/user/:id', function (request, response) {
-  var id = request.params.id;
-  var user = models.userModel(id);
-  if (user === null) {
-    console.log('User with _id:' + id + ' not found.');
-    response.status(400).send('Not found');
-    return;
+app.get('/user/list', async (req, res) => {
+  try {
+    const users = await User.find({}, '_id first_name last_name');
+    res.status(200).send(users);
+  } catch (err) {
+    console.error('Error fetching user list', err);
+    res.status(500).send({ error: 'Error fetching user list' });
   }
-  response.status(200).send(user);
-  return;
 });
 
 /*
- * URL /photosOfUser/:id - Return the Photos for User (id)
+ * URL /user/:id - Return user details:
+ *   _id, first_name, last_name, location, description, occupation
+ * Return 400 for invalid IDs or missing user.
  */
-app.get('/photosOfUser/:id', function (request, response) {
-  var id = request.params.id;
-  var photos = models.photoOfUserModel(id);
-  if (photos.length === 0) {
-    console.log('Photos for user with _id:' + id + ' not found.');
-    response.status(400).send('Not found');
-    return;
+app.get('/user/:id', async (req, res) => {
+  const id = req.params.id;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).send({ error: 'Invalid user ID' });
   }
-  response.status(200).send(photos);
+
+  try {
+    const user = await User.findById(
+      id,
+      '_id first_name last_name location description occupation'
+    );
+
+    if (!user) {
+      return res.status(400).send({ error: 'User not found' });
+    }
+
+    res.status(200).send(user);
+  } catch (err) {
+    console.error('Error fetching user', err);
+    res.status(500).send({ error: 'Error fetching user' });
+  }
 });
 
+/*
+ * URL /photosOfUser/:id - Return photos for user (id).
+ * Each photo:
+ *   _id, user_id, comments, file_name, date_time
+ * Each comment must include:
+ *   comment, date_time, user: { _id, first_name, last_name }
+ * Return 400 for invalid IDs.
+ */
+app.get('/photosOfUser/:id', async (req, res) => {
+  const id = req.params.id;
 
-var server = app.listen(portno, function () {
-  var port = server.address().port;
-  console.log('Listening at http://localhost:' + port + ' exporting the directory ' + __dirname);
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).send({ error: 'Invalid user ID' });
+  }
+
+  try {
+    const photos = await Photo.find({ user_id: id });
+
+    const result = [];
+
+    for (const photo of photos) {
+      // Clone Mongoose document to plain object
+      const cleanPhoto = JSON.parse(JSON.stringify(photo));
+
+      // Populate each comment's user field
+      for (const comment of cleanPhoto.comments) {
+        const user = await User.findById(
+          comment.user_id,
+          '_id first_name last_name'
+        );
+        comment.user = user;
+      }
+
+      result.push(cleanPhoto);
+    }
+
+    res.status(200).send(result);
+  } catch (err) {
+    console.error('Error fetching photos', err);
+    res.status(500).send({ error: 'Error fetching photos' });
+  }
 });
+
+/*
+ * Start server after connecting to MongoDB.
+ */
+mongoose
+  .connect('mongodb://127.0.0.1:27017/cs142project6', {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+  })
+  .then(() => {
+    const server = app.listen(portno, function () {
+      const port = server.address().port;
+      console.log(
+        'Listening at http://localhost:' +
+          port +
+          ' exporting the directory ' +
+          __dirname
+      );
+    });
+  })
+  .catch((err) => {
+    console.error('Failed to connect to MongoDB', err);
+    process.exit(1);
+  });

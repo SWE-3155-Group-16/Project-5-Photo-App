@@ -1,0 +1,32 @@
+William Brodersen User Stories:
+1. As a user, I want the app to work the same after backend changes, So that I experience no regressions
+- [] Navigation works
+- [] User pages load correctly
+- [] Photo views display properly
+- [] No UI breaks occur after migration
+2. As a user, I want to see a list of users in the sidebar, so that I can navigate between profiles
+-[] Endpoint returns _id, first_name, last_name
+-[] Data is fetched from MongoDB
+-[] Response format matches UI needs
+3. As a user, I want to view detailed information about a user, So that I can learn more about them
+-[] Return full user details (_id, name, location, description, occupation)
+-[] Invalid IDs return HTTP 400 with message
+-[] Data comes from MongoDB
+
+
+Harrison Syfert User Stories:
+4. As a user, I want the backend to fetch data from MongoDB instead of static models, so that the app uses real database data
+-[] No usage of models.photoApp.js remains
+-[] Data is retrieved using Mongoose schemas
+-[] Server connects successfully to MongoDB
+-[] All routes return database-backed responses
+5. As a user, I want the /user/list API to return minimal user data, so that the sidebar loads quickly
+-[] Returns only _id, first_name, last_name
+-[] Data is fetched from MongoDB Users collection
+-[] Response is formatted as an array
+-[] Handles empty or missing users gracefully
+6. As a user, I want the /user/:id API to return detailed user information, so that I can view a user profile
+-[] Returns _id, first_name, last_name, location, description, occupation
+-[] Valid user IDs return correct data
+-[] Invalid IDs return HTTP 400 with message
+-[] Data is retrieved using Mongoose
