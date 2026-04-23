@@ -1,1 +1,14 @@
-
+William Brodersen User Stories:
+1. As a user, I want to log in using my login name, so that I can access the app
+- Valid login_name logs user in
+- Session is created
+- Redirects to user detail view
+2. As a user, I want to see my comment immedialetly after posting
+- UI updates without page reload
+- Comment includes text, user, and timestamp
+3. As a user, I want my uploaded photo to appear immediately, so that I know it worked
+-Photo shows in user's photo list
+-Includes correct metadata (data, user)
+4. As a user, I want my password to be hidden while typing, so that my information is private
+- Password fields use masked input
+- No plain text visible
