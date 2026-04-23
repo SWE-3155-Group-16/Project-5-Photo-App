@@ -12,3 +12,19 @@ William Brodersen User Stories:
 4. As a user, I want my password to be hidden while typing, so that my information is private
 - Password fields use masked input
 - No plain text visible
+Warren Itenson's User Stories:
+1. As a user, I want to upload a photo from my device, so that I can store it in my account
+ - “Add Photo” button is visible only when logged in
+ - Clicking button opens file picker UI
+ - User can select a file and submit
+ - Backend POST /photos/new saves file in images/ with unique name
+ - Database stores file reference, creation date, and owner
+2. As a user, I want my uploaded photo to appear immediately, so that I know it worked
+ - UI updates without full page reload
+ - Photo shows in user’s photo list
+ - Displays correct image from saved reference
+3. As a user, I want a simple upload interface, so that I can easily add photos
+ - Uses Material-UI components (button, dialog, file input)
+ - Submit button is disabled until a file is selected
+ - Shows success or error message after upload
+ - Only accepts valid image file types
