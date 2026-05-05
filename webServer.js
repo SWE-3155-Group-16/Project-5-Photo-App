@@ -77,7 +77,27 @@ app.post('/admin/login', async (request, response) => {
     return response.status(400).send('Error logging in');
   }
 });
+  app.get('/admin/me', async (request, response) => {
+    if (!request.session.user_id) {
+      return response.status(401).send('Unauthorized');
+    }
 
+    try {
+      const user = await User.findById(
+        request.session.user_id,
+        '_id first_name last_name login_name'
+      );
+
+      if (!user) {
+        return response.status(401).send('Unauthorized');
+      }
+
+      return response.status(200).send(user);
+    } catch (err) {
+      console.error('Error in /admin/me', err);
+      return response.status(500).send('Error checking login');
+    }
+  });
 /*
  * POST /admin/logout
  * Log out current user.
