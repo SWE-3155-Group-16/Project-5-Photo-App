@@ -271,7 +271,8 @@ app.get('/test/counts', async (req, res) => {
 });
 
 /*
- * URL /user/list - Return all users with only _id, first_name, last_name.
+ * URL /user/list - Return all users with _id, first_name, last_name,
+ * photoCount (photos owned), and commentCount (comments authored).
  * Requires login.
  */
 app.get('/user/list', async (req, res) => {
@@ -280,11 +281,80 @@ app.get('/user/list', async (req, res) => {
   }
 
   try {
-    const users = await User.find({}, '_id first_name last_name');
-    return res.status(200).send(users);
+    const users = await User.find({}, '_id first_name last_name').lean();
+
+    const usersWithCounts = await Promise.all(
+      users.map(async (user) => {
+        const userId = user._id;
+
+        // Count photos owned by this user
+        const photoCount = await Photo.countDocuments({ user_id: userId });
+
+        // Count comments authored by this user across all photos
+        const photosWithComments = await Photo.find(
+          { 'comments.user_id': userId },
+          { comments: 1 }
+        ).lean();
+        let commentCount = 0;
+        for (const photo of photosWithComments) {
+          commentCount += (photo.comments || []).filter(
+            c => String(c.user_id) === String(userId)
+          ).length;
+        }
+
+        return { ...user, photoCount, commentCount };
+      })
+    );
+
+    return res.status(200).send(usersWithCounts);
   } catch (err) {
     console.error('Error fetching user list', err);
     return res.status(500).send({ error: 'Error fetching user list' });
+  }
+});
+
+/*
+ * URL /commentsOfUser/:userId - Return all comments authored by a user.
+ * Each entry includes comment text, date, and the photo it was made on.
+ * Requires login.
+ */
+app.get('/commentsOfUser/:userId', async (req, res) => {
+  if (!req.session.user_id) {
+    return res.status(401).send('Unauthorized');
+  }
+
+  try {
+    const { userId } = req.params;
+
+    const photos = await Photo.find(
+      { 'comments.user_id': userId },
+      { file_name: 1, user_id: 1, comments: 1 }
+    ).lean();
+
+    const result = [];
+    for (const photo of photos) {
+      const userComments = (photo.comments || []).filter(
+        c => String(c.user_id) === String(userId)
+      );
+      for (const comment of userComments) {
+        result.push({
+          comment_id: comment._id,
+          comment: comment.comment,
+          date_time: comment.date_time,
+          photo: {
+            _id: photo._id,
+            file_name: photo.file_name,
+            owner_id: photo.user_id,
+          },
+        });
+      }
+    }
+
+    result.sort((a, b) => new Date(b.date_time) - new Date(a.date_time));
+    return res.status(200).send(result);
+  } catch (err) {
+    console.error('Error fetching user comments', err);
+    return res.status(500).send({ error: 'Error fetching user comments' });
   }
 });
 
