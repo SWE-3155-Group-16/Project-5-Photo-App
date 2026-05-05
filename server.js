@@ -153,13 +153,77 @@ app.get('/photosOfUser/:userId', requireAuth, async (req, res) => {
   }
 });
 
-// GET user list
+// GET user list with photo count and comment count bubbles
 app.get('/user/list', requireAuth, async (req, res) => {
   try {
     const users = await User.find({}, '_id first_name last_name').lean();
-    res.json(users);
+
+    // For each user, count their photos and the comments they have authored
+    const usersWithCounts = await Promise.all(
+      users.map(async (user) => {
+        const userId = user._id;
+
+        // Photo count: number of photos owned by this user
+        const photoCount = await Photo.countDocuments({ user_id: userId });
+
+        // Comment count: count comments authored by this user across ALL photos
+        const photosWithComments = await Photo.find(
+          { 'comments.user_id': userId },
+          { 'comments': 1 }
+        ).lean();
+        let commentCount = 0;
+        for (const photo of photosWithComments) {
+          commentCount += (photo.comments || []).filter(
+            c => String(c.user_id) === String(userId)
+          ).length;
+        }
+
+        return { ...user, photoCount, commentCount };
+      })
+    );
+
+    res.json(usersWithCounts);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch users' });
+  }
+});
+
+// GET all comments authored by a specific user, with photo info
+app.get('/commentsOfUser/:userId', requireAuth, async (req, res) => {
+  try {
+    const userId = req.params.userId;
+
+    // Find all photos that contain comments by this user
+    const photos = await Photo.find(
+      { 'comments.user_id': userId },
+      { file_name: 1, user_id: 1, comments: 1 }
+    ).lean();
+
+    const result = [];
+    for (const photo of photos) {
+      const userComments = (photo.comments || []).filter(
+        c => String(c.user_id) === String(userId)
+      );
+      for (const comment of userComments) {
+        result.push({
+          comment_id: comment._id,
+          comment: comment.comment,
+          date_time: comment.date_time,
+          photo: {
+            _id: photo._id,
+            file_name: photo.file_name,
+            owner_id: photo.user_id,
+          },
+        });
+      }
+    }
+
+    // Sort by date descending
+    result.sort((a, b) => new Date(b.date_time) - new Date(a.date_time));
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch comments' });
   }
 });
 

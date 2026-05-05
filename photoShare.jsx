@@ -13,6 +13,7 @@ import TopBar from './components/topBar/TopBar';
 import UserDetail from './components/userDetail/userDetail';
 import UserList from './components/userList/userList';
 import UserPhotos from './components/userPhotos/userPhotos';
+import UserComments from './components/userComments/userComments';
 
 class PhotoShare extends React.Component {
   constructor(props) {
@@ -52,6 +53,9 @@ class PhotoShare extends React.Component {
                   />
                   <Route path="/photos/:userId"
                     render={props => <UserPhotos {...props} refreshKey={photoRefreshKey} />}
+                  />
+                  <Route path="/comments/:userId"
+                    render={props => <UserComments {...props} />}
                   />
                   <Route path="/users" component={UserList} />
                 </Switch>
