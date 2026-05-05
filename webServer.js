@@ -13,6 +13,9 @@ const mongoose = require('mongoose');
 const session = require('express-session');
 const bodyParser = require('body-parser');
 
+
+const fs = require('fs');
+
 const User = require("./models/User.js");
 const Photo = require("./models/photo.js");
 const SchemaInfo = require("./models/schemaInfo.js");
@@ -31,6 +34,33 @@ app.use(bodyParser.json());
 
 // Serve static files from current directory.
 app.use(express.static(__dirname));
+
+const multer = require('multer');
+const path = require('path');
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, './images');
+  },
+  filename: function (req, file, cb) {
+    const uniqueName =
+      'photo_' + Date.now() + path.extname(file.originalname);
+    cb(null, uniqueName);
+  },
+});
+
+const upload = multer({ storage });
+
+function visiblePhotoQuery(loggedInUserId) {
+  return {
+    $or: [
+      { user_id: loggedInUserId },
+      { sharing_list: { $exists: false } },
+      { sharing_list: null },
+      { sharing_list: loggedInUserId },
+    ],
+  };
+}
 
 app.get('/', function (request, response) {
   response.send('Simple web server of files from ' + __dirname);
@@ -276,14 +306,28 @@ app.get('/user/list', async (req, res) => {
   }
 
   try {
-    const users = await User.find({}, '_id first_name last_name');
-    return res.status(200).send(users);
+    const users = await User.find({}, '_id first_name last_name').lean();
+
+    const usersWithCounts = await Promise.all(
+      users.map(async (user) => {
+        const photo_count = await Photo.countDocuments({
+          user_id: user._id,
+          ...visiblePhotoQuery(req.session.user_id),
+        });
+
+        return {
+          ...user,
+          photo_count,
+        };
+      })
+    );
+
+    return res.status(200).send(usersWithCounts);
   } catch (err) {
     console.error('Error fetching user list', err);
     return res.status(500).send({ error: 'Error fetching user list' });
   }
 });
-
 /*
  * URL /user/:id - Return user details:
  *   _id, first_name, last_name, location, description, occupation
@@ -339,7 +383,10 @@ app.get('/photosOfUser/:id', async (req, res) => {
   }
 
   try {
-    const photos = await Photo.find({ user_id: id });
+   const photos = await Photo.find({
+  user_id: id,
+  ...visiblePhotoQuery(request.session.user_id),
+});
 
     const result = [];
 
@@ -361,6 +408,51 @@ app.get('/photosOfUser/:id', async (req, res) => {
   } catch (err) {
     console.error('Error fetching photos', err);
     return res.status(500).send({ error: 'Error fetching photos' });
+  }
+});
+
+app.post('/photos/new', async (req, res) => {
+  if (!req.session.user_id) {
+    return res.status(401).send('Unauthorized');
+  }
+
+  if (!req.file) {
+    return res.status(400).send({ error: 'No photo file provided' });
+  }
+
+  let sharingList;
+
+  if (req.body.sharing_list !== undefined) {
+    try {
+      sharingList = JSON.parse(req.body.sharing_list);
+
+      if (!Array.isArray(sharingList)) {
+        return res.status(400).send({ error: 'sharing_list must be an array' });
+      }
+    } catch (err) {
+      return res.status(400).send({ error: 'Invalid sharing_list' });
+    }
+  }
+
+  try {
+    const photoData = {
+      file_name: req.file.filename,
+      date_time: new Date(),
+      user_id: req.session.user_id,
+      comments: [],
+    };
+
+    if (sharingList !== undefined) {
+      photoData.sharing_list = sharingList;
+    }
+
+    const photo = new Photo(photoData);
+    await photo.save();
+
+    return res.status(201).send(photo);
+  } catch (err) {
+    console.error('Error uploading photo', err);
+    return res.status(500).send({ error: 'Failed to upload photo' });
   }
 });
 
