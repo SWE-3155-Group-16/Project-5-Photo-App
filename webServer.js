@@ -385,6 +385,74 @@ app.post("/commentsOfPhoto/:photo_id", function (request, response) {
   });
 });
 
+app.delete("/photo/:photo_id", async (req, res) => {
+  if (!req.session.user_id) {
+    return res.status(401).send("Unauthorized");
+  }
+
+  const photo = await Photo.findOne({
+    _id: req.params.photo_id,
+    user_id: req.session.user_id
+  });
+
+  if (!photo) {
+    return res.status(403).send("Not allowed");
+  }
+
+  await Photo.deleteOne({ _id: photo._id });
+
+  res.status(200).send("Photo deleted");
+});
+
+app.delete("/comments/:comment_id", async (req, res) => {
+  if (!req.session.user_id) {
+    return res.status(401).send("Unauthorized");
+  }
+
+  const commentId = new mongoose.Types.ObjectId(req.params.comment_id);
+
+  const photo = await Photo.findOne({
+    "comments._id": commentId,
+    "comments.user_id": req.session.user_id
+  });
+
+  if (!photo) {
+    return res.status(403).send("Not allowed");
+  }
+
+  await Photo.updateOne(
+    { "comments._id": commentId },
+    { $pull: { comments: { _id: commentId } } }
+  );
+
+  res.status(200).send("Comment deleted");
+});
+
+app.delete("/user", async (req, res) => {
+  if (!req.session.user_id) {
+    return res.status(401).send("Unauthorized");
+  }
+
+  const userId = req.session.user_id;
+
+  // Delete all photos by user
+  await Photo.deleteMany({ user_id: userId });
+
+  // Remove all comments by user (from all photos)
+  await Photo.updateMany(
+    {},
+    { $pull: { comments: { user_id: userId } } }
+  );
+
+  // Delete user
+  await User.deleteOne({ _id: userId });
+
+  // Destroy session (logout)
+  req.session.destroy();
+
+  res.status(200).send("User deleted");
+});
+
 /*
  * Start server after connecting to MongoDB.
  */
