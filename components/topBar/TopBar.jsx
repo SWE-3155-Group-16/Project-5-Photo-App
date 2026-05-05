@@ -38,17 +38,30 @@ class TopBar extends React.Component {
 
     this.fileInputRef = React.createRef();
   }
-
+    applyDarkMode = (user) => {
+    if (user && user.dark_mode) {
+      document.body.style.backgroundColor = "#121212";
+      document.body.style.color = "#ffffff";
+    } else {
+      document.body.style.backgroundColor = "#ffffff";
+      document.body.style.color = "#000000";
+    }
+  };
   componentDidMount() {
     this.checkAuth();
   }
 
-  checkAuth() {
-    axios.get('/admin/me')
-      .then(res => this.setState({ currentUser: res.data }))
-      .catch(() => this.setState({ currentUser: null }));
-  }
-
+checkAuth() {
+  axios.get('/admin/me')
+    .then(res => {
+      this.setState({ currentUser: res.data });
+      this.applyDarkMode(res.data);
+    })
+    .catch(() => {
+      this.setState({ currentUser: null });
+      this.applyDarkMode(null);
+    });
+}
   handleOpenLogin = () => {
     this.setState({
       loginDialogOpen: true,
@@ -70,15 +83,18 @@ class TopBar extends React.Component {
       login_name: this.state.login_name,
       password: this.state.password
     })
-      .then(() => {
-        this.setState({
-          loginDialogOpen: false,
-          login_name: '',
-          password: '',
-          loginError: null
-        });
-        window.location.reload();
-      })
+        .then((res) => {
+          this.applyDarkMode(res.data); 
+
+          this.setState({
+            loginDialogOpen: false,
+            login_name: '',
+            password: '',
+            loginError: null
+          });
+
+          window.location.reload();
+        })
       .catch(() => {
         this.setState({
           loginError: 'Invalid login name or password'
@@ -185,7 +201,7 @@ class TopBar extends React.Component {
       .catch(console.error);
   };
 
-  render() {
+  render(){
     const {
       currentUser,
       dialogOpen,

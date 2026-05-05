@@ -11,6 +11,9 @@ const userSchema = new mongoose.Schema({
   occupation: String,
   login_name: { type: String, required: true, unique: true },
   password: { type: String, required: true },
+  website: String,
+  profile_photo: String,
+  dark_mode: Boolean
 });
 
 /**

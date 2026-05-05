@@ -77,27 +77,27 @@ app.post('/admin/login', async (request, response) => {
     return response.status(400).send('Error logging in');
   }
 });
-  app.get('/admin/me', async (request, response) => {
-    if (!request.session.user_id) {
+app.get('/admin/me', async (request, response) => {
+  if (!request.session.user_id) {
+    return response.status(401).send('Unauthorized');
+  }
+
+  try {
+    const user = await User.findById(
+      request.session.user_id,
+      '_id first_name last_name login_name location description occupation website profile_photo dark_mode'
+    );
+
+    if (!user) {
       return response.status(401).send('Unauthorized');
     }
 
-    try {
-      const user = await User.findById(
-        request.session.user_id,
-        '_id first_name last_name login_name'
-      );
-
-      if (!user) {
-        return response.status(401).send('Unauthorized');
-      }
-
-      return response.status(200).send(user);
-    } catch (err) {
-      console.error('Error in /admin/me', err);
-      return response.status(500).send('Error checking login');
-    }
-  });
+    return response.status(200).send(user);
+  } catch (err) {
+    console.error('Error in /admin/me', err);
+    return response.status(500).send('Error checking login');
+  }
+});
 /*
  * POST /admin/logout
  * Log out current user.
@@ -177,7 +177,11 @@ app.post('/user', async (request, response) => {
       last_name: last_name.trim(),
       location: location ? location.trim() : '',
       description: description ? description.trim() : '',
-      occupation: occupation ? occupation.trim() : ''
+      occupation: occupation ? occupation.trim() : '',
+
+      website: '',
+      profile_photo: '',
+      dark_mode: false
     });
 
     return response.status(200).send({
@@ -304,7 +308,7 @@ app.get('/user/:id', async (req, res) => {
   try {
     const user = await User.findById(
       id,
-      '_id first_name last_name location description occupation'
+      '_id first_name last_name location description occupation website profile_photo dark_mode'
     );
 
     if (!user) {
@@ -315,6 +319,50 @@ app.get('/user/:id', async (req, res) => {
   } catch (err) {
     console.error('Error fetching user', err);
     return res.status(500).send({ error: 'Error fetching user' });
+  }
+});
+app.put('/user/:id', async (req, res) => {
+  if (!req.session.user_id) {
+    return res.status(401).send('Unauthorized');
+  }
+
+  const id = req.params.id;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).send({ error: 'Invalid user ID' });
+  }
+
+  if (req.session.user_id.toString() !== id.toString()) {
+    return res.status(403).send('Not allowed');
+  }
+
+  try {
+    const updatedUser = await User.findByIdAndUpdate(
+      id,
+      {
+        first_name: req.body.first_name,
+        last_name: req.body.last_name,
+        location: req.body.location,
+        description: req.body.description,
+        occupation: req.body.occupation,
+        website: req.body.website,
+        profile_photo: req.body.profile_photo,
+        dark_mode: req.body.dark_mode
+      },
+      {
+        new: true,
+        runValidators: true
+      }
+    );
+
+    if (!updatedUser) {
+      return res.status(400).send({ error: 'User not found' });
+    }
+
+    return res.status(200).send(updatedUser);
+  } catch (err) {
+    console.error('Error updating user', err);
+    return res.status(500).send({ error: 'Error updating user' });
   }
 });
 
@@ -366,43 +414,38 @@ app.get('/photosOfUser/:id', async (req, res) => {
 
 /* URL /commentsOfPhoto/:photo_id - adds a new comment on photo for the current user
  */
-app.post("/commentsOfPhoto/:photo_id", function (request, response) {
-  if (hasNoUserSession(request, response)) return;
-  const id = request.params.photo_id || "";
-  const user_id = getSessionUserID(request) || "";
-  const comment = request.body.comment || "";
-  if (id === "") {
-    response.status(400).send("id required");
-    return;
+app.post("/commentsOfPhoto/:photo_id", async (request, response) => {
+  if (!request.session.user_id) {
+    return response.status(401).send("Unauthorized");
   }
-  if (user_id === "") {
-    response.status(400).send("user_id required");
-    return;
-  }
-  if (comment === "") {
-    response.status(400).send("comment required");
-    return;
-  }
-  Photo.updateOne(
+
+  const id = request.params.photo_id;
+  const user_id = request.session.user_id;
+  const comment = request.body.comment;
+
+  if (!id) return response.status(400).send("id required");
+  if (!comment) return response.status(400).send("comment required");
+
+  try {
+    await Photo.updateOne(
       { _id: new mongoose.Types.ObjectId(id) },
-      { $push: {
+      {
+        $push: {
           comments: {
             comment: comment,
             date_time: new Date(),
-            user_id: new mongoose.Types.ObjectId(user_id),
+            user_id: user_id,
             _id: new mongoose.Types.ObjectId()
           }
-        } },
-   function (err) {
-    if (err) {
-      // Query returned an error. We pass it back to the browser with an
-      // Internal Service Error (500) error code.
-      console.error("Error in /commentsOfPhoto/:photo_id", err);
-      response.status(500).send(JSON.stringify(err));
-      return;
-    }
-    response.end();
-  });
+        }
+      }
+    );
+
+    return response.status(200).send("Comment added");
+  } catch (err) {
+    console.error(err);
+    return response.status(500).send("Error adding comment");
+  }
 });
 
 app.delete("/photo/:photo_id", async (req, res) => {
